@@ -1,0 +1,34 @@
+[fs-uae]
+
+# Amiga
+amiga_model = A3000
+uae_chipset = aga
+
+# CPU
+cpu = 68030
+
+# Minne
+chip_memory = 2048
+fast_memory = 8192
+
+# Kickstart ROM
+kickstart_file = /home/johau/Dokument/FS-UAE/Kickstarts/kick40063.A600
+
+# Hardfile
+hard_drive_0 = /home/johau/Dokument/FS-UAE/HD/System.hdf
+hard_drive_1 = /home/johau/Utveckling/amiga
+
+# Emulated serial port -
+serial_port = /run/amiga-com
+
+# Video
+fullscreen = 0
+window_width = 1024
+window_height = 768
+
+# Joystick
+joystick_port_0 = mouse
+joystick_port_1 = joystick
+
+# Ljud
+volume = 0
