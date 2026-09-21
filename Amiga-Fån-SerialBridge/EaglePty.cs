@@ -27,6 +27,12 @@ class EaglePty
     [DllImport("libc", SetLastError = true)]
     static extern int open(string pathname, int flags); // Öppnar PTY-slaven och håller den öppen för att förhindra EIO när Amiberry stänger porten.
 
+    //[DllImport("libc", SetLastError = true)]
+    //static extern int chmod(string pathname, uint mode); // Ändrar rättigheter på PTY-slaven
+
+    [DllImport("libc", SetLastError = true)]
+    static extern int chmod(IntPtr pathname, uint mode); // Ändrar rättigheter på PTY-slaven
+
     //lite egna variabler
     public const string link = "/run/amiga-com"; // Fast adress som länkar PTY som Amiberry alltid använder. PTY kan ändras vid omstart
     private int master; //Håller linux FD referens till masterport
@@ -61,7 +67,12 @@ class EaglePty
         IntPtr ptr = ptsname(master); //fråga linux vilken slave som hör till master
         if (ptr == IntPtr.Zero) throw new Exception("Kunde inte hitta PTY slave."); //Hitta ingen
         Console.WriteLine($"PTY slave: {Marshal.PtrToStringAnsi(ptr)}");
-        return Marshal.PtrToStringAnsi(ptr)!; //Konvertera till string, inte null!
+        // Ger användaren läs- och skrivrättighet via /run/amiga-com        
+        if (chmod(ptr, 0x1B6) != 0)
+        throw new Exception($"Kunde inte ändra PTY-rättigheter. Linux error: {Marshal.GetLastPInvokeError()}");//Ge alla användare skrivrättighet till port
+
+        
+        return Marshal.PtrToStringAnsi(ptr)!; //Konvertera till string, inte null!    
     }
 
     private int tvingaSlavenOpen(){
@@ -134,14 +145,7 @@ class EaglePty
                         "PTY master stängdes.");
                     break;
                 }
-                DataReceived?.Invoke(buffer, count);//Anropa alla som lyssnar på event. Logger T.ex. Mhmmm
-
-                Console.WriteLine(
-                    $"RX {count} byte: " +
-                    BitConverter.ToString(
-                        buffer,
-                        0,
-                        count));
+                DataReceived?.Invoke(buffer, count);//Anropa alla som lyssnar på event. Logger T.ex. Mhmm
             }
             catch (IOException ex)
             {

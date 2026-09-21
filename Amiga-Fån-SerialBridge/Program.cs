@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
 class Program
@@ -39,7 +39,12 @@ class Program
  *        En enkel parser för att att bryta ner anrop över comporten
  *        Protokoll: "kommando" "Telefonnr" "Text" 0(flaggor)
  *        En class EagleVolte för att kommunicera med modemet    
- *
+ *   0.2 2026-09-21
+ *      Eaglepty fixat rättighet till port för alla användare chmod(ptr, 0x1B6chmod0666
+*       EaglePty avaktiverade lite debugdata 
+ *      Program kortade lite hur den hanterar event från eaglepty
+ *      Fixade lite fulheter med emulering av modem, jävla rödvin
+ *      Implemenerade parser RING och SMS
  * ---------------------------------------------------------------
  *
  *  Copyright (C) 2026 AFÅN Team Eagle
@@ -65,8 +70,8 @@ Fellogg
 AT+CPIN?
 
 udo chmod 666 /dev/pts/2
-sudo printf 'HEJ FRAN LINUX\r' > /run/amiga-com
-
+sudo printf 'HEJ FRAN LINUX\r\n' > /run/amiga-com
+echo "HEJ FRÅN AMIGAN" > SER:
 
  *Class EaglePty Skapar Pty
  *Class EagleLog skriver till logfil
@@ -74,31 +79,37 @@ sudo printf 'HEJ FRAN LINUX\r' > /run/amiga-com
  */
 
 
-
+    static string sparadMottagenData = ""; //static för o spara mottagen data i
 
     static async Task Main()
     {
-      //var pty = new EaglePty(); //Skapar pty objekt
-
+    Console.CancelKeyPress += (sender, e) =>//ctrl+c hanterare
+    {
+        e.Cancel = true;
+        Environment.Exit(0);
+    };
       VälkomstText();
       EagleVoLTE eagle = new EagleVoLTE(true); //true=emulerad
-      eagle.Start();
+      //eagle.Start();
 
    
  
  
       var pty = new EaglePty(); //Skapar pty objekt
       var logger = new EagleLogg(); //skapar logger objekt
-      //pty.DataReceived += logger.LogData; //on event från pty spara i loggobj.
-     
-      //pty.DataReceived += (data, antal) =>  //skapar en minifunktion, neat
-        //Console.WriteLine("Från com-port: " + System.Text.Encoding.ASCII.GetString(data, 0, antal));
-      //pty.DataReceived += data => KommandoParser("Från com-port: " + data);
-    
-    
-    
-        pty.DataReceived += (data, antal) =>
-        MottagData(data, antal, logger);
+
+        pty.DataReceived += (data, antal) => //event från pty
+        { 
+            sparadMottagenData +=  System.Text.Encoding.ASCII.GetString(data, 0, antal); //Lägg till i buffert
+            while (sparadMottagenData.Contains("\r\n")) //loopa sålänge radbryt finns i buffert
+    {           int radslut = sparadMottagenData.IndexOf("\r\n"); //hitta radbryt
+                string rad = sparadMottagenData.Substring(0, radslut); //Spara allt innan radbryt i ny sträng
+                sparadMottagenData = sparadMottagenData.Substring(radslut + 2); //Behåll text efter radbryt
+                Console.WriteLine("Textrad: " + rad);//Skriv ut den utformaterade raden
+                KommandoParser(rad, eagle); //anrop kommandoparser
+    }
+};
+
       await pty.Start(); //Startar pty alltså pipe mot amigan
    
    
@@ -109,46 +120,41 @@ sudo printf 'HEJ FRAN LINUX\r' > /run/amiga-com
 
     }
 
-static void MottagData(byte[] data, int antal, EagleLogg logger) //behövs för datan kommer bitvis
-{
-    string sparadMottagenData = "";
-    sparadMottagenData += System.Text.Encoding.ASCII.GetString(data, 0, antal);
 
-    while (sparadMottagenData.Contains("\r\n"))
-    {
-        int slut = sparadMottagenData.IndexOf("\r\n");
-
-        string rad = sparadMottagenData.Substring(0, slut);
-
-        sparadMottagenData =
-            sparadMottagenData.Substring(slut + 2);
-
-        Console.WriteLine("Från com-port: " + rad);
-
-        logger.LogData(data, antal);
-
-        KommandoParser(rad);
-    }
-}
-
-static void KommandoParser(string text)
+static void KommandoParser(string text, EagleVoLTE eagle)
 {
     Console.WriteLine("Kommando från com-port:");
 
     try
     {
         // Protokoll: "kommando" "Telefonnr" "Text" 0(flaggor)
-        string[] delar = text.Split('"');
+        // SKICKASMS
+        // RING
+string[] delar = text.Split('"');
 
-        string anrop = delar[0].Trim();
-        string nummer = delar[1];
-        string meddelande = delar[3];
-        int flaggor = int.Parse(delar[4].Trim());
+string anrop = delar[1];
+string nummer = delar[3];
+string meddelande = delar[5];
+int flaggor = int.Parse(delar[6].Trim());
 
         Console.WriteLine("Anrop: {0}", anrop);
         Console.WriteLine("Telefonnr: {0}", nummer);
         Console.WriteLine("Text: {0}", meddelande);
         Console.WriteLine("Flaggor: {0}", flaggor);
+
+        if (anrop == "SKICKASMS")
+        {
+        Console.WriteLine("eagle.SkickaSMS(nummer, meddelande");
+            
+            //eagle.SkickaSMS(nummer, meddelande);
+        }
+        if (anrop == "RING")
+        {
+              Console.WriteLine("eagle.Ring(nummer)");
+            //eagle.Ring(nummer);
+        }
+
+
     }
     catch
     {
