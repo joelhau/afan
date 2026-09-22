@@ -41,11 +41,19 @@ class Program
  *        En class EagleVolte för att kommunicera med modemet    
  *   0.2 2026-09-21
  *      Eaglepty fixat rättighet till port för alla användare chmod(ptr, 0x1B6chmod0666
-*       EaglePty avaktiverade lite debugdata 
+ *       EaglePty avaktiverade lite debugdata 
  *      Program kortade lite hur den hanterar event från eaglepty
  *      Fixade lite fulheter med emulering av modem, jävla rödvin
  *      Implemenerade parser RING och SMS
- * ---------------------------------------------------------------
+ *   0.3 2026-0922
+ *      Kopplade modemet till parser
+ *      Modememulering kan avbrytas via terminal
+ *      Nu e det ju ganska färdigt för o provköra mkt enkelt men ändock
+ *
+
+ 
+ 
+ ---------------------------------------------------------------
  *
  *  Copyright (C) 2026 AFÅN Team Eagle
  *
@@ -144,14 +152,18 @@ int flaggor = int.Parse(delar[6].Trim());
 
         if (anrop == "SKICKASMS")
         {
-        Console.WriteLine("eagle.SkickaSMS(nummer, meddelande");
-            
-            //eagle.SkickaSMS(nummer, meddelande);
+            Console.WriteLine("STARTA FUNKTION:eagle.SkickaSMS(nummer, meddelande");
+            eagle.SkickaSMS(nummer, meddelande);
         }
         if (anrop == "RING")
         {
-              Console.WriteLine("eagle.Ring(nummer)");
-            //eagle.Ring(nummer);
+            Console.WriteLine("STARTA FUNKTION:eagle.Ring(nummer)");
+            eagle.Ring(nummer);
+        }
+        if (anrop == "STARTAMODEM")
+        {
+            Console.WriteLine("STARTA FUNKTION:STARTAMODEM");
+            eagle.AnslutRiktigtModem();
         }
 
 

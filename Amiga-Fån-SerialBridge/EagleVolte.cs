@@ -3,13 +3,15 @@ using System.IO.Ports;
 class EagleVoLTE
 {
     private SerialPort Modem;
-
+    private bool emulated;
     public EagleVoLTE(bool emulated)
     {
         if (emulated){
-                Modem = new SerialPort("/dev/pts/1", GetModemBaud()); //Skapar modemet  
+                Modem = null; //Skapar modemet
+                this.emulated = true;
         } else {
         Modem = new SerialPort(GetModemPort(), GetModemBaud()); //Skapar modemet
+        this.emulated = false;
         }
     }
 
@@ -26,11 +28,27 @@ class EagleVoLTE
         return 115200;
     }
 
-        private void Send(string command){ //Skickar till modem o lägger in ett litet enter
+    private void Send(string command){ //Skickar till modem o lägger in ett litet enter
 
-        Modem.Write(command + "\r");
+        if (!emulated) //Ha va snitsigt skicka bara till modem om det inte e emulerat moahahahha
+        {
+            Modem.Write(command + "\r");
+        }
+
+        
     }
     
+    public void AnslutRiktigtModem() //Funktion för att lämna emulering
+    {
+    if (!emulated)
+        return;
+
+    emulated = false;
+
+    Modem = new SerialPort(GetModemPort(), GetModemBaud());
+    Modem.Open();
+}
+
     public void Ring(string nummer)
     {
         Send("ATDT" + nummer + ";"); //Skicka ring o nr
