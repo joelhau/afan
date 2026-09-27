@@ -1,4 +1,14 @@
-/* meny.c * Vad ska Afån göra? * Huvudprogram, menylogik och input. */
+/* meny.c * Vad ska Afån göra? * Huvudprogram, menylogik och input. 
+0.1 Skriva om från början med reste
+0.2 städa lite bland rutiner som inte behövs
+0.3 testa olika sätt att starta appar o hantera fönster
+    Liten snuskig bugg med o skapa fontpekare för många ggr
+    Missa o avsluta intuition vid skärm avslut
+    Felsökare med loggfil
+    Det e något som inte funkar me o starta om skärm hmm
+    MEN NU KAN DEN DROPPA UT I WB O STARTA OM IAF 
+
+*/
 
 #include <exec/types.h>
 #include <exec/execbase.h>
@@ -30,14 +40,14 @@
 void draw_icon(struct RastPort* rp, int iconIndex, int startX, int startY); //visa ikoner
 void delay(); //delayloop
 
-
 //variabler f?r scrollen o sk?rm
 #define WIDTH 640 //640
 #define HEIGHT 200
 
-struct Interrupt inputHandler;
 volatile BOOL running;
-struct TextFont *font;
+//struct TextFont *font;
+struct TextFont *font = NULL;
+int exitCode = 0;
 
 
 
@@ -50,12 +60,10 @@ void delay()
 void draw_time(struct RastPort* rp) { 
     struct DateStamp ds; struct DateTime dt; 
     static char dateStr[40]; static char timeStr[40]; //deklarera font 
-    struct TextAttr ta = { .ta_Name = "topaz.font", // detta är Topaz 8 
-    .ta_YSize = 8, 
-    .ta_Style = FS_NORMAL, 
-    .ta_Flags = FPF_ROMFONT }; 
-    font = OpenFont(&ta); 
     DateStamp(&ds); 
+    SetAPen(rp, 1); //st?ller in f?rg o rita med
+      SetBPen(rp, 10); //st?ller in f?rg o rita med
+  
     dt.dat_Stamp = ds; 
     dt.dat_Format = FORMAT_INT; // Internationellt format: HH:MM:SS 
     dt.dat_Flags = 0; dt.dat_StrDay = NULL; 
@@ -65,14 +73,43 @@ void draw_time(struct RastPort* rp) {
         // Printf("Kunde inte hämta tiden.\n"); 
     } 
     if (font) {
-        SetFont(rp, font); // använd fonten 
-        Move(rp, 20, 20); 
+        SetFont(rp, font); // använd fonten 19 
+        Move(rp, 20, 6); 
         Text(rp, "APhone", 6); 
-        Move(rp, 200, 20); 
+        Move(rp, 200, 6); 
         Text(rp, timeStr, strlen(timeStr)); 
     } 
 }
 
+void draw_ram(struct RastPort* rp) {
+
+    int hojd=480;
+    int bredd=640;
+   
+    SetAPen(rp, 7); //st?ller in f?rg o rita med
+    Move(rp, 0, 0); //vit övre
+    Draw(rp, bredd, 0); //vita övreram    
+
+    Move(rp, 0, 0); //vit sida vänster
+    Draw(rp, 0, hojd); //vita övreram    
+
+    Move(rp, 4, 4); //vit övre inre list
+    Draw(rp, bredd-4, 4); //vita övreram    
+
+
+    Move(rp, 4, 4); //vit sida inre list
+    Draw(rp, 4, 10); //vita övreram    
+
+
+    SetAPen(rp, 24); //övtr grå
+    RectFill(rp, 1, 1, 100, 2);
+
+
+    SetAPen(rp, 24); //övtr grå
+    RectFill(rp, 5, 5, 100, 9);
+
+    
+}
 
 
 
@@ -80,6 +117,8 @@ void draw_time(struct RastPort* rp) {
 
 int main()
 {
+
+   
     struct APhone app;//structen f�r delade globala variabler � pekare
     BOOL updateScreen = 0;
     app.mnuX = 1;
@@ -88,6 +127,22 @@ int main()
     if (!initSkarm())
     return 1;
     struct IntuiMessage* msg;
+   
+    if (!font)
+{
+    struct TextAttr ta = {
+        .ta_Name = "topaz.font",
+        .ta_YSize = 8,
+        .ta_Style = FS_NORMAL,
+        .ta_Flags = FPF_ROMFONT
+    };
+
+    font = OpenFont(&ta);
+
+    if (!font)
+        return 1;
+}
+
     draw_background(rp); //rita bakgrund
     
     //rita ikoner
@@ -102,7 +157,9 @@ int main()
     draw_icon(rp, 3, 50, 150);
     draw_icon(rp, 3, 145, 150);
     draw_icon(rp, 4, 240, 150);
+    draw_ram(rp);
     draw_time(rp);
+    
     
 
 
@@ -122,7 +179,9 @@ int main()
             draw_icon(rp, 3, 50, 150);
             draw_icon(rp, 3, 145, 150);
             draw_icon(rp, 4, 240, 150);
-            //draw_time(rp);
+            draw_time(rp);
+            draw_ram(rp);
+            draw_time(rp);
             updateScreen = FALSE;
         }
     
@@ -151,29 +210,26 @@ while ((msg = (struct IntuiMessage*)GetMsg(window->UserPort))){
                     break;
                 case 0x44: // Enter
                 {
-                    if (app.mnuX == 2 && app.mnuY == 1) { // app 1x1
-                        //IntuitionBase = (struct IntuitionBase*)OpenLibrary("intuition.library", 37);
-                        //if (!IntuitionBase) {
-                            //printf("Kunde inte �ppna Intuition!\n");
-                        //    return 1;
-                        //}
-                        //LONG res;
-                        //WindowToBack(window);
-                        //res = Execute("SYS:Utilities/Clock", 0, 0);
-                        //WindowToFront(window);
-                        startaApp("SYS:Utilities/Clock");
+                    if (app.mnuX == 1 && app.mnuY == 2) { // Klocka 1x2
+                      //  startaApp("SYS:Utilities/Clock");
+                        
+                        //msg = NULL;
                         //updateScreen = TRUE;
+                        exitCode = 1;
+                        running = FALSE;
                     }
+                                       
+                    if (app.mnuX == 2 && app.mnuY == 2) { // Klocka 1x2
+                        startaApp("SYS:Utilities/Clock");
+                        
+                        //msg = NULL;
+                        updateScreen = TRUE;
+                        //exitCode = 1;
+                        //running = FALSE;
+                    }
+                    
                     if (app.mnuX == 1 && app.mnuY == 1) { // app 1x1
-                        IntuitionBase = (struct IntuitionBase*)OpenLibrary("intuition.library", 37);
-                        if (!IntuitionBase) {
-                            printf("Kunde inte �ppna Intuition!\n");
-                            return 1;
-                        }
-                        LONG res;
-                        WindowToBack(window);
-                        System("Run >NIL: WHDLoad slave=dh0:games/moonstone/moonstone.slave data=dh0:games/moonstone/data", NULL);
-                        WindowToFront(window);
+                     //   System("Run >NIL: WHDLoad slave=dh0:games/moonstone/moonstone.slave data=dh0:games/moonstone/data", NULL);
                     }
 
                     break;
@@ -186,15 +242,22 @@ while ((msg = (struct IntuiMessage*)GetMsg(window->UserPort))){
             ReplyMsg((struct Message*)msg);
         }
 
+           // ReplyMsg((struct Message*)msg);
 
 
        
         delay();
     }//Dödar loop
 
+if (msg != NULL) {
+    ReplyMsg((struct Message*)msg);
+}
 
 
-if (font) CloseFont(font);
+
+    if (font) 
+        CloseFont(font);
+font = NULL;
 stangSkarm();
 return 0;
 }

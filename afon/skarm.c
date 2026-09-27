@@ -21,48 +21,78 @@ struct Screen *screen;
 struct Window *window;
 struct RastPort *rp;
 
-void oppnaFonster(void)
-{
-    window = OpenWindowTags(NULL,
-        WA_CustomScreen, (ULONG)screen,
-        WA_Left, 0,
-        WA_Top, 0,
-        WA_Width, 640,
-        WA_Height, 480,
-        WA_Borderless, TRUE,
-        WA_IDCMP, IDCMP_RAWKEY,
-        TAG_DONE);
-}
 
 void startaApp(char *kommando)
 {
-    CloseWindow(window);
-    window = NULL;
-
-    CloseScreen(screen);
-    screen = NULL;
-    rp = NULL;
+    stangSkarm();
 
     Execute(kommando, NULL, NULL);
 
-    if (!screen)
-        initSkarm();
+    if (!initSkarm())
+        return;
+}
+
+void loggFel(char *text, LONG error){
+    BPTR fh;
+
+    fh = Open("PROGDIR:afon.log", MODE_READWRITE);
+
+    if (fh)
+    {
+        Seek(fh, 0, OFFSET_END);
+
+        FPrintf(fh, "%s: %ld\n", text, error);
+
+        Close(fh);
+    }
 }
 
 int initSkarm(void)
 {
+    LONG error;
+
+    loggFel("INIT START", 0);
+
     screen = NULL;
     window = NULL;
     rp = NULL;
 
     if (!GfxBase)
+    {
         GfxBase = (struct GfxBase*)OpenLibrary("graphics.library", 0);
 
+        if (GfxBase)
+            loggFel("graphics.library OK", 0);
+        else
+            loggFel("graphics.library FEL", -1);
+    }
+    else
+    {
+        loggFel("graphics.library redan öppen", 0);
+    }
+
     if (!IntuitionBase)
+    {
         IntuitionBase = (struct IntuitionBase*)OpenLibrary("intuition.library", 0);
 
+        if (IntuitionBase)
+            loggFel("intuition.library OK", 0);
+        else
+            loggFel("intuition.library FEL", -1);
+    }
+    else
+    {
+        loggFel("intuition.library redan öppen", 0);
+    }
+
     if (!GfxBase || !IntuitionBase)
+    {
+        loggFel("LIBRARY CHECK FEL", 0);
+        stangSkarm();
         return 0;
+    }
+
+    loggFel("OPEN SCREEN", 0);
 
     screen = OpenScreenTags(NULL,
         SA_Left, 0,
@@ -72,12 +102,21 @@ int initSkarm(void)
         SA_Depth, 6,
         SA_Type, CUSTOMSCREEN,
         SA_Title, (ULONG)"APhone",
+        SA_ErrorCode, (ULONG)&error,
         TAG_DONE);
 
     if (!screen)
+    {
+        loggFel("OpenScreenTags FEL", error);
+        stangSkarm();
         return 0;
+    }
+
+    loggFel("SCREEN OK", 0);
 
     rp = &screen->RastPort;
+
+    loggFel("OPEN WINDOW", 0);
 
     window = OpenWindowTags(NULL,
         WA_CustomScreen, (ULONG)screen,
@@ -91,21 +130,19 @@ int initSkarm(void)
 
     if (!window)
     {
-        CloseScreen(screen);
-        screen = NULL;
-        rp = NULL;
+        loggFel("OpenWindowTags FEL", 0);
+        stangSkarm();
         return 0;
     }
 
+    loggFel("WINDOW OK", 0);
+    loggFel("INIT KLAR", 0);
+
     return 1;
-}void stangSkarm(void)
+}
+
+void stangSkarm(void)
 {
-
-
-
-
-
-    
     if (window)
     {
         CloseWindow(window);
@@ -120,15 +157,15 @@ int initSkarm(void)
 
     rp = NULL;
 
-//    if (IntuitionBase)
-//    {
- //       CloseLibrary((struct Library*)IntuitionBase);
- //       IntuitionBase = NULL;
- //   }
+    if (IntuitionBase)
+    {
+        CloseLibrary((struct Library*)IntuitionBase);
+        IntuitionBase = NULL;
+    }
 
-   // if (GfxBase)
-  //  {
-  //      CloseLibrary((struct Library*)GfxBase);
-  //      GfxBase = NULL;
-  //  }
+    if (GfxBase)
+    {
+        CloseLibrary((struct Library*)GfxBase);
+        GfxBase = NULL;
+    }
 }

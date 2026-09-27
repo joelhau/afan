@@ -6,13 +6,14 @@
 #include <graphics/rastport.h>
 
 void startaApp(char *kommando);
-void oppnaFonster(void);
+void loggFel(char *text, LONG error);
+int initSkarm(void);
+void stangSkarm(void);
+
 
 extern struct Screen *screen;
 extern struct Window *window;
 extern struct RastPort *rp;
 
-int initSkarm(void);
-void stangSkarm(void);
 
 #endif
