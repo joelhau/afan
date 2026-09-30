@@ -13,30 +13,54 @@
 #include <proto/graphics.h>
 
 #include "skarm.h"
-
+#include "meny.h"
 struct GfxBase *GfxBase;
 struct IntuitionBase *IntuitionBase;
 
 struct Screen *screen;
 struct Window *window;
 struct RastPort *rp;
-
+struct TextFont *font = NULL;
 
 void startaApp(char *kommando)
 {
+    if (font)
+    {
+        CloseFont(font);
+        font = NULL;
+    }
+
     stangSkarm();
 
     Execute(kommando, NULL, NULL);
 
     if (!initSkarm())
         return;
+
+    {
+        struct TextAttr ta = {
+            .ta_Name = "topaz.font",
+            .ta_YSize = 8,
+            .ta_Style = FS_NORMAL,
+            .ta_Flags = FPF_ROMFONT
+        };
+
+        font = OpenFont(&ta);
+    }
+}
+
+void startaAppTest(char *kommando)
+{
+   ScreenToBack(screen);
+        Execute(kommando, NULL, NULL);
+    ScreenToFront(screen);
 }
 
 void loggFel(char *text, LONG error){
     BPTR fh;
 
     fh = Open("PROGDIR:afon.log", MODE_READWRITE);
-
+//
     if (fh)
     {
         Seek(fh, 0, OFFSET_END);
@@ -97,8 +121,8 @@ int initSkarm(void)
     screen = OpenScreenTags(NULL,
         SA_Left, 0,
         SA_Top, 0,
-        SA_Width, 640,
-        SA_Height, 480,
+        SA_Width, app.screenW,
+        SA_Height, app.screenH,
         SA_Depth, 6,
         SA_Type, CUSTOMSCREEN,
         SA_Title, (ULONG)"APhone",
@@ -122,8 +146,8 @@ int initSkarm(void)
         WA_CustomScreen, (ULONG)screen,
         WA_Left, 0,
         WA_Top, 0,
-        WA_Width, 640,
-        WA_Height, 480,
+        WA_Width, app.screenW,
+        WA_Height, app.screenH,
         WA_Borderless, TRUE,
         WA_IDCMP, IDCMP_RAWKEY,
         TAG_DONE);
@@ -137,7 +161,19 @@ int initSkarm(void)
 
     loggFel("WINDOW OK", 0);
     loggFel("INIT KLAR", 0);
+struct TextAttr ta = {
+    .ta_Name = "topaz.font",
+    .ta_YSize = 8,
+    .ta_Style = FS_NORMAL,
+    .ta_Flags = FPF_ROMFONT
+};
 
+font = OpenFont(&ta);
+
+if (!font)
+    loggFel("FONT FEL", 0);
+else
+    loggFel("FONT OK", 0);
     return 1;
 }
 

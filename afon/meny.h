@@ -5,6 +5,8 @@ struct APhone
 {
     int mnuX;
     int mnuY;
+    int screenH;
+    int screenW;
 };
-
+extern struct APhone app;
 #endif

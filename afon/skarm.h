@@ -9,8 +9,9 @@ void startaApp(char *kommando);
 void loggFel(char *text, LONG error);
 int initSkarm(void);
 void stangSkarm(void);
+void startaAppTest(char *kommando);
 
-
+extern struct TextFont *font;
 extern struct Screen *screen;
 extern struct Window *window;
 extern struct RastPort *rp;

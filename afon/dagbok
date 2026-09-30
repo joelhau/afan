@@ -1,0 +1,16 @@
+0.1 Skriva om från början med reste
+0.2 städa lite bland rutiner som inte behövs
+0.3 testa olika sätt att starta appar o hantera fönster
+    Liten snuskig bugg med o skapa fontpekare för många ggr
+    Missa o avsluta intuition vid skärm avslut
+    Felsökare med loggfil
+    Det e något som inte funkar me o starta om skärm hmm
+    MEN NU KAN DEN DROPPA UT I WB O STARTA OM IAF 
+0.4 Flytta drawtime, målaram uppdatera skärm till grafik
+    afon structen global
+    Ändrat lite me font om det börjar bugga vid omstart
+    städat lite i main
+    en ny launcher med sendtoback den e najs
+0.5
+    global skärmvariabel
+    ramfunktion
