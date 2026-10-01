@@ -1,0 +1,24 @@
+0.1 2026-09-20
+    Bara ett experiment att lyckas skicka något från emulatorn till SerialBridge. Det funka
+0.2
+    Bytte till SendIO för o inte låsa upp programmet
+    Skickar med radbrytningar
+0.3 2026-09-30
+    Nu börjar telefonen faktiskt likna en telefon.
+    Menysystemet är i detta skede medvetet enkelt och ganska rörigt, ber om ursäkt för det.
+    Input, menyer och funktioner ligger fortfarande tätt ihop och
+    kodstrukturen är ungefär "få skiten att fungera först".
+    v0.3 handlar alltså mer om funktion än om snygg kod.
+    När telefonfunktionerna är testade ska menydelen skrivas om
+    med renare struktur, gemensamma UI-funktioner och mindre
+    hoppande mellan funktioner.
+    Det ser ut som skit eftersom det just nu ska fungera,
+    inte för att det ska vara vackert.
+    0 kr i lön.
+    100 % entusiasm.
+    Den skickar kommando för sms å att ringa till serialbridge i Linux
+0.3.1 2026-09-31
+    Bugg med o avsluta cli
+0.3.2
+    Lite grafikfix.
+    Nu fungerar allt omskrivet som ett WB fönster så mkt enklare

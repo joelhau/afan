@@ -7,7 +7,12 @@
 #include <proto/exec.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
+#include <proto/dos.h>
+#include <dos/dosextens.h>
+#include <intuition/intuition.h>
+#include <graphics/gfxbase.h>
+#include <proto/intuition.h>
+#include <proto/graphics.h>
 
 //Telefonboken
 #define MAX_SNABBNR 100 
@@ -15,87 +20,135 @@
 #define MAX_NUMMER 30 
 #define FILNAMN "PROGDIR:snabbnr.dat" 
 
-struct Snabbnummer { //Structen f√∂r poster
+struct Snabbnummer { //Structen fˆr poster
     char namn[MAX_NAMN]; 
     char nummer[MAX_NUMMER]; 
 }; 
 
-struct Snabbnummer snabbnr[MAX_SNABBNR]; //Listan √∂ver nr
+struct Snabbnummer snabbnr[MAX_SNABBNR]; //Listan ˆver nr
 
+struct IntuitionBase *IntuitionBase;
+struct GfxBase *GfxBase;
 
 /*
-Af√•n Serial CLI v0.1
+AfÂn Serial CLI v0.1
 
-Ett litet och medvetet primitivt CLI-program f√∂r Amigan. Inga konstigheter, inga ramverk och absolut ingen Python ‚Äî 
+Ett litet och medvetet primitivt CLI-program fˆr Amigan. Inga konstigheter, inga ramverk och absolut ingen Python ? 
 bara C, `serial.device` och en gammal hederlig input-loop. 
 
-Programmet √∂ppnar Amigans serieport via `serial.device`, v√§ntar p√• att anv√§ndaren skriver ett kommando och 
+Programmet ˆppnar Amigans serieport via `serial.device`, v‰ntar pÂ att anv‰ndaren skriver ett kommando och 
 trycker Enter. Raden skickas sedan direkt vidare till serieporten.
 
 
-Just nu √§r det bara en dum terminal. Och det √§r precis meningen.
+Just nu ‰r det bara en dum terminal. Och det ‰r precis meningen.
 
 
-R√∂ret som ska snacka fr√•n amigan med serialbridge i f√•nen
+Rˆret som ska snacka frÂn amigan med serialbridge i fÂnen
 
-0.1 2026-09-20
-    Bara ett experiment att lyckas skicka n√•got fr√•n emulatorn till SerialBridge. Det funka
-0.2
-    Bytte till SendIO f√∂r o inte l√•sa upp programmet
-    Skickar med radbrytningar
-0.3 2026-09-30
-    Nu b√∂rjar telefonen faktiskt likna en telefon.
-    Menysystemet √§r i detta skede medvetet enkelt och ganska r√∂rigt, ber om urs√§kt f√∂r det.
-    Input, menyer och funktioner ligger fortfarande t√§tt ihop och
-    kodstrukturen √§r ungef√§r "f√• skiten att fungera f√∂rst".
-    v0.3 handlar allts√• mer om funktion √§n om snygg kod.
-    N√§r telefonfunktionerna √§r testade ska menydelen skrivas om
-    med renare struktur, gemensamma UI-funktioner och mindre
-    hoppande mellan funktioner.
-    Det ser ut som skit eftersom det just nu ska fungera,
-    inte f√∂r att det ska vara vackert.
-    0 kr i l√∂n.
-    100 % entusiasm.
-    Den skickar kommando f√∂r sms √• att ringa till serialbridge i Linux
+Koden e rˆrig o hemsk men nu funkar det viktigaste en backup innan renskrivning bara :) hehe
 
 */
 
-void skrivSerie(struct IOExtSer *io, char *text); //Deklarera funktion innan main s√•atteee
-void kontrolleraFil(void); //Kolla s√• snabbnrfil finns
-void lasLista(void);  //L√§s in telefonlista 
+void skrivSerie(struct IOExtSer *io, char *text); //Deklarera funktion innan main sÂatteee
+void kontrolleraFil(void); //Kolla sÂ snabbnrfil finns
+void lasLista(void);  //L‰s in telefonlista 
 void mnuHuvud();
+void skrivText(char *text);
+void mnuHuvud(void);
+int las_val(void);
+void tryckEnter(void);
+void tomSkarm(void);
+
+char *mnuStarta();
 char *mnuSms();
 char *mnuRing();
 char *las_text(void);
 int las_val(void);
+struct Window *afonWindow;
+struct RastPort *afonRP;
 
-
-
+int textY = 20;
+bool kor = true;
 int meny(int aktiv);
 
 int main(void)
 {
-    struct IOExtSer io; //structur f√∂r kommunikation med serial.device
-    LONG error; //variabel f√∂r o spara felkod opendevice
-    memset(&io, 0, sizeof(io)); //Rensa io
+    char *input;
+    char rad[300];
+    char sendbuf[300];
 
-    error = OpenDevice( "serial.device", 0, (struct IORequest *)&io, 0 );//√ñppna serieport
 
-if (error != 0) { //Kolla felkod
-    printf("Kunde inte oppna serieporten!\n"); 
-    return 1; 
+
+    IntuitionBase = (struct IntuitionBase *)OpenLibrary(
+        "intuition.library", 37);
+
+    GfxBase = (struct GfxBase *)OpenLibrary(
+        "graphics.library", 37);
+if (IntuitionBase == NULL || GfxBase == NULL)
+{
+    if (GfxBase != NULL)
+        CloseLibrary((struct Library *)GfxBase);
+
+    if (IntuitionBase != NULL)
+        CloseLibrary((struct Library *)IntuitionBase);
+
+    return 1;
+}
+struct Screen *wbScreen;
+
+wbScreen = IntuitionBase->FirstScreen;
+
+afonWindow = OpenWindowTags(NULL,
+    WA_CustomScreen, wbScreen,
+    WA_Left, 0,
+    WA_Top, 0,
+    WA_Width, wbScreen->Width,
+    WA_Height, wbScreen->Height,
+    WA_Title, (ULONG)"AF≈NSEND",
+    WA_CloseGadget, TRUE,
+    WA_DragBar, TRUE,
+    WA_DepthGadget, TRUE,
+    WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_VANILLAKEY,
+    TAG_END
+);
+ActivateWindow(afonWindow);
+
+if (afonWindow == NULL)
+{
+    CloseLibrary((struct Library *)GfxBase);
+    CloseLibrary((struct Library *)IntuitionBase);
+    return 1;
 }
 
-    char *inputText; //textpekare fr√•n funktion
+
+afonRP = afonWindow->RPort;
+        //slut test
+SetAPen(afonRP, 1);
+SetBPen(afonRP, 0);
+
+    struct IOExtSer io; //structur fˆr kommunikation med serial.device
+    LONG error; //variabel fˆr o spara felkod opendevice
+    memset(&io, 0, sizeof(io)); //Rensa io
+
+    error = OpenDevice( "serial.device", 0, (struct IORequest *)&io, 0 );//÷ppna serieport
+if (error != 0)
+{
+    skrivText("Kunde inte oppna serieporten!");
+
+    CloseWindow(afonWindow);
+    CloseLibrary((struct Library *)GfxBase);
+    CloseLibrary((struct Library *)IntuitionBase);
+
+    return 1;
+} 
+
+    char *inputText; //textpekare frÂn funktion
     int aktivMeny=1;
-    char input[256];
-    char sendbuf[300];
-    bool kor=true;
-    printf("AF√ÖN SERIAL CLI v0.1\n");
-    printf("Serieport oppnad.\n");
-    printf("Skriv kommando:\n");
-    kontrolleraFil();  //Kolla s√• snabbnrfil finns
-    lasLista();  //L√§s in telefonlista 
+    skrivText("AF≈N SERIAL CLI v0.1");
+    skrivText("Serieport oppnad.");
+    skrivText("Skriv kommando:");
+    kontrolleraFil();  //Kolla sÂ snabbnrfil finns
+    lasLista();  //L‰s in telefonlista 
         // Protokoll: "kommando" "Telefonnr" "Text" 0(flaggor)
         // SKICKASMS
         // RING
@@ -112,6 +165,9 @@ if (error != 0) { //Kolla felkod
          switch (las_val()) {
 
         case 1:
+            skrivSerie(&io,mnuStarta());
+            tryckEnter();
+            tomSkarm();
             mnuHuvud();
             
             break;
@@ -119,106 +175,120 @@ if (error != 0) { //Kolla felkod
         case 2:
             
             skrivSerie(&io,mnuRing());
+            tryckEnter();
+            tomSkarm();
+            mnuHuvud();
             break;
 
         case 3:
             skrivSerie(&io,mnuSms());
+            tryckEnter();
+            tomSkarm();
+            mnuHuvud();
             break;
      
         case 4:
-            printf("> ");
-            if (fgets(input, sizeof(input), stdin) == NULL)
+  
             break;
-
-            input[strcspn(input, "\r\n")] = '\0';//Tabort enter
-
-            if (strlen(input) == 0)
-            continue;
-
             
-            printf("SKICKAR: [%s]\n", input);
-            //
-//
-            sprintf(sendbuf, "%s\r\n", input);
-            skrivSerie(&io, sendbuf);
-        break;
-     
      
      
             case 9:
-         printf("9 FUNKAR!\n");
-            kor=false;
+                skrivText("9 Bˆrjar st‰nga ner anslutning.....");
+                kor=false;
             break;
     }
          }
 
-    CloseDevice((struct IORequest *)&io); //st√§ng serieporten
+CloseDevice((struct IORequest *)&io);
+skrivText("AFONSEND SLUTAR NU");
+CloseWindow(afonWindow);
+CloseLibrary((struct Library *)GfxBase);
+CloseLibrary((struct Library *)IntuitionBase);
+
+
     return 0;
                                                                                                             }
 
-char *las_text(void)
-{
-    static char text[161];
-
-    fgets(text, sizeof(text), stdin);
-    text[strcspn(text, "\n")] = '\0';
-
-    return text;
-}
 
 int las_val(void)
 {
     char text[16];
+    char *resultat;
 
-    fgets(text, sizeof(text), stdin);
+    resultat = las_text();
+
+    if (resultat == NULL)
+        return 9;
+
+    strcpy(text, resultat);
 
     return atoi(text);
 }
-
-void mnuHuvud(){
-            printf("Huvudmeny\n\n");
-            printf("1.Huvudmeny\n");
-            printf("2.Ring nummer\n");
-            printf("3.SMSa nummer\n");
-            printf("x.SMSa snabbnr\n");
-            printf("x.Redigera snabbnr\n");
-            printf("x.Laes SMS\n");
-            printf("9.Avbryt\n");
+void mnuHuvud()
+{
+    skrivText("Huvudmeny");
+    skrivText("");
+    skrivText("1. Aktivera 4G-Modul");
+    skrivText("2. Ring nummer");
+    skrivText("3. SMSa nummer");
+    skrivText("x. SMSa snabbnr");
+    skrivText("x. Redigera snabbnr");
+    skrivText("x. L‰s SMS");
+    skrivText("9. Avbryt");
 }
 char *mnuRing(){
-        char *inputText; //textpekare fr√•n funktion
+        char *inputText; //textpekare frÂn funktion
         static char kommando[256];
 
-            printf("Sla in nummer att ringa\n");
+            skrivText("SlÂ in nummer att ringa");
             inputText = las_text();
-            printf("Ringer.....\n");
-              //$ printf '"STARTAMODEM" "435345" "LINUX" 0\r\n' > /run/amiga-com
-        //return "'RING'" + inputText "LINUX" 0\r\n'
+            skrivText("Ringer.....");
         sprintf(kommando, "\"RING\" \"%s\" \"LINUX\" 0\r\n", inputText);
-
     return kommando;
 }
 char *mnuSms(){
      static char kommando[256];
 
-                char *inputNr; //textpekare fr√•n funktion
-                char *inputText; //textpekare fr√•n funktion
+                char *inputNr; //textpekare frÂn funktion
+                char *inputText; //textpekare frÂn funktion
 
-            printf("Sla in nummer att SMSa\n");
+            skrivText("SlÂ in nummer att SMSa");
             inputNr = las_text();
-            printf("Skriv text\n");
+            skrivText("Skriv text");
             inputText = las_text();
-            printf("Skickar\n");
+            skrivText("Skickar");
             sprintf(kommando, "\"SKICKASMS\" \"%s\" \"%s\" 0\r\n",
             inputNr, inputText);
             return kommando;
         }
+char *mnuStarta(){
+     static char kommando[256];
 
+                char *inputNr; //textpekare frÂn funktion
+                char *inputText; //textpekare frÂn funktion
+
+            sprintf(kommando, "\"STARTAMODEM\" \"0\" \"LINUX\" 0\r\n");
+            return kommando;
+        }
+
+     //$ printf '"STARTAMODEM" "435345" "LINUX" 0\r\n' > /run/amiga-com
+   
+
+
+void tryckEnter(void)
+{
+    skrivText("Tryck Enter for att fortsatta...");
+    las_text();
+}
 
 void skrivSerie(struct IOExtSer *io, char *text) { 
-    printf("SKICKAR: [%s]\n", text);
-    io->IOSer.io_Data = (APTR)text; //l√§gg in texten
-    io->IOSer.io_Length = strlen(text); //L√§ngden p√• texten
+ 
+    char rad[300];
+    sprintf(rad, "SKICKAR: %s", text);
+    skrivText(rad);
+    io->IOSer.io_Data = (APTR)text; //l‰gg in texten
+    io->IOSer.io_Length = strlen(text); //L‰ngden pÂ texten
     io->IOSer.io_Command = CMD_WRITE;
     SendIO((struct IORequest *)io); //Skicka
 }
@@ -229,7 +299,7 @@ void tomLista(void) { //Skapa tom telefonlistna
     } 
 }
 
-void kontrolleraFil(void) { //Kolla s√• fil finns
+void kontrolleraFil(void) { //Kolla sÂ fil finns
     FILE *fil; int i; fil = fopen(FILNAMN, "r"); 
     if (fil != NULL) {  //Filen finns ABORT!! 
         fclose(fil); 
@@ -237,7 +307,7 @@ void kontrolleraFil(void) { //Kolla s√• fil finns
     } 
     fil = fopen(FILNAMN, "w"); 
     if (fil == NULL) { //Fel med o skapa fil
-        printf("Kunde inte skapa snabbnummer-filen!\n"); 
+        skrivText("Kunde inte skapa snabbnummer-filen!"); 
         return; 
     } 
     for (i = 0; i < MAX_SNABBNR; i++) { //Skapar filen
@@ -245,12 +315,12 @@ void kontrolleraFil(void) { //Kolla s√• fil finns
     } 
     fclose(fil); } 
     
-    void lasLista(void) { //L√§s in telefonlista 
+    void lasLista(void) { //L‰s in telefonlista 
         FILE *fil; char rad[100]; 
         int plats = 0; char *separator; 
         tomLista(); 
         fil = fopen(FILNAMN, "r"); 
-        if (fil == NULL) { printf("Kunde inte oppna snabbnummer-filen!\n"); return; } 
+        if (fil == NULL) { skrivText("Kunde inte oppna snabbnummer-filen!"); return; } 
         while (fgets(rad, sizeof(rad), fil) != NULL && plats < MAX_SNABBNR) { 
             rad[strcspn(rad, "\r\n")] = '\0'; 
             separator = strchr(rad, '|');
@@ -264,7 +334,7 @@ void kontrolleraFil(void) { //Kolla s√• fil finns
         } fclose(fil); 
     } 
     
-    int laggTillSnabbnr(char *namn, char *nummer) { //* * L√§gger till ett nytt snabbnummer. * * Returnerar: * 0 = lyckades * 1 = listan √§r full */ 
+    int laggTillSnabbnr(char *namn, char *nummer) { //* * L‰gger till ett nytt snabbnummer. * * Returnerar: * 0 = lyckades * 1 = listan ‰r full */ 
         int i; 
         for (i = 0; i < MAX_SNABBNR; i++) { //Leta ledig plats 
             if (snabbnr[i].namn[0] == '\0') { 
@@ -282,7 +352,7 @@ void kontrolleraFil(void) { //Kolla s√• fil finns
         FILE *fil; int i; 
         fil = fopen(FILNAMN, "w"); //w=skriv om filen
         if (fil == NULL) { 
-                printf("Kunde inte spara snabbnummer!\n"); 
+                skrivText("Kunde inte spara snabbnummer!"); 
                 return; 
         } 
         for (i = 0; i < MAX_SNABBNR; i++) { //Loopa o spara 
@@ -290,3 +360,103 @@ void kontrolleraFil(void) { //Kolla s√• fil finns
         } 
         fclose(fil); 
     }
+void skrivText(char *text)
+{
+    Move(afonRP, 8, textY);
+    Text(afonRP, text, strlen(text));
+
+    textY += 10;
+}
+
+void tomSkarm(void)
+{
+    SetAPen(afonRP, 0);
+
+    RectFill(afonRP,
+             5, 12,
+             afonWindow->Width - 10,
+             afonWindow->Height - 10);
+
+    SetAPen(afonRP, 1);
+    SetBPen(afonRP, 0);
+    SetDrMd(afonRP, JAM2);
+
+    textY = 20;
+}
+
+char *las_text(void)
+{
+    static char text[161];
+    int pos = 0;
+    int startX = 8;
+    int startY = textY;
+
+    struct IntuiMessage *msg;
+
+    text[0] = '\0';
+
+    while (kor)
+    {
+        WaitPort(afonWindow->UserPort);
+
+        while ((msg = (struct IntuiMessage *)GetMsg(afonWindow->UserPort)))
+        {
+            if (msg->Class == IDCMP_CLOSEWINDOW)
+            {
+                kor = false;
+                ReplyMsg((struct Message *)msg);
+                return NULL;
+            }
+
+            if (msg->Class == IDCMP_VANILLAKEY)
+            {
+                if (msg->Code == 13)
+                {
+                    text[pos] = '\0';
+
+                    textY += 10;
+
+                    ReplyMsg((struct Message *)msg);
+                    return text;
+                }
+
+                if (msg->Code == 8)
+                {
+                    if (pos > 0)
+                    {
+                        pos--;
+                        text[pos] = '\0';
+
+                        /* Rita om hela inmatningsraden */
+                        SetAPen(afonRP, 0);
+                        SetDrMd(afonRP, JAM2);
+
+                        Move(afonRP, startX, startY);
+                        Text(afonRP, text, strlen(text));
+                    }
+                }
+                else if (msg->Code >= 32 && msg->Code <= 126)
+                {
+                    if (pos < 160)
+                    {
+                        text[pos] = msg->Code;
+                        pos++;
+                        text[pos] = '\0';
+
+                        /* Visa det vi skriver */
+                        SetAPen(afonRP, 1);
+                        SetBPen(afonRP, 0);
+                        SetDrMd(afonRP, JAM2);
+
+                        Move(afonRP, startX, startY);
+                        Text(afonRP, text, strlen(text));
+                    }
+                }
+            }
+
+            ReplyMsg((struct Message *)msg);
+        }
+    }
+
+    return NULL;
+}
