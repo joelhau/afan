@@ -21,12 +21,14 @@ void uppdatera_skarm(struct RastPort* rp) {
     draw_icon(rp, 0, 50, 50);//wings
     draw_icon(rp, 1, 145, 50);//moonstone
     draw_icon(rp, 2, 240, 50);//kalender
+
     draw_icon(rp, 3, 50, 100);//klocka
-    draw_icon(rp, 5, 145, 100);
-    draw_icon(rp, 5, 240, 100);
+    draw_icon(rp, 5, 145, 100);//cli
+    draw_icon(rp, 9, 240, 100); //intenet
+
     draw_icon(rp, 4, 50, 150);//Telefon
-    draw_icon(rp, 5, 145, 150);
-    draw_icon(rp, 5, 240, 150);
+    draw_icon(rp, 7, 145, 150);//Telefonbok
+    draw_icon(rp, 6, 240, 150);//sms
     draw_ram(rp);
     draw_time(rp);
 
@@ -35,26 +37,7 @@ void uppdatera_skarm(struct RastPort* rp) {
 
 void draw_ram(struct RastPort* rp) {
 
-    //int hojd=480;
-    //int bredd=630;
-  //lilla topplisten 
-    SetAPen(rp, 7); //st?ller in f?rg o rita med
-    Move(rp, 3, 3); //vit övre
-    Draw(rp, app.screenW-3, 3);
-    Move(rp, 3, 3); //vit vänster
-    Draw(rp, 3, app.screenH-3);
-
-    SetAPen(rp, 26); //ruta grå
-    RectFill(rp, 4, 4, app.screenW-3, 15);
-
-    SetAPen(rp, 22); //st?ller in f?rg o rita med
-    Move(rp, 3, 16); //list under mörkgrå
-    Draw(rp, app.screenW-3, 16);
-
-    SetAPen(rp, 1); //st?ller in f?rg o rita med
-    Move(rp, 3, 17); //list underst svart
-    Draw(rp, app.screenW-3, 17);
-    
+    int hight = 196;
     
 
     //yttre ram övre
@@ -77,32 +60,72 @@ void draw_ram(struct RastPort* rp) {
 
     SetAPen(rp, 7); //st?ller in f?rg o rita med
     Move(rp, 0, 0); //vit sida vänster
-    Draw(rp, 0, app.screenH); //vita övreram    
+    Draw(rp, 0, hight-3); //vita övreram    
 
     SetAPen(rp, 26); //st?ller in f?rg o rita med
     Move(rp, 1, 1); //grå
-    Draw(rp, 1, app.screenH-1); 
+    Draw(rp, 1, hight-1); 
     
     SetAPen(rp, 1); //st?ller in f?rg o rita med
     Move(rp, 2, 2); //
-    Draw(rp, 2, app.screenH-2); //svart    
+    Draw(rp, 2, hight); //svart    
 
- //yttre ram höger--------------------------------------------------------
 
-    SetAPen(rp, 7); //st?ller in f?rg o rita med
-    Move(rp, 0, 0); //vit sida vänster
-    Draw(rp, 0, app.screenH); //vita övreram    
+    //yttre ram höger--------------------------------------------------------
 
-    SetAPen(rp, 26); //st?ller in f?rg o rita med
-    Move(rp, 1, 1); //grå
-    Draw(rp, 1, app.screenH-1); 
+    SetAPen(rp, 22); //mörkgrå
+    Move(rp, app.screenW-1, 1); 
+    Draw(rp, app.screenW-1, hight);   
+
+    SetAPen(rp, 26); //ljusgrå
+    Move(rp, app.screenW-2, 1); 
+    Draw(rp, app.screenW-2, hight);    
     
+    SetAPen(rp, 1); //svart
+    Move(rp, app.screenW-3, 2); //vit sida vänster
+    Draw(rp, app.screenW-3, hight);  
+  
+//yttre ram nedre--------------------------------------------------------
+
+
+    SetAPen(rp, 1); //svart
+    Move(rp, 2, hight); 
+    Draw(rp, app.screenW-2, hight);     
+
+
+    SetAPen(rp, 26); //ljusgrå
+    Move(rp, 1, hight+1);
+    Draw(rp, app.screenW-1, hight+1);
+
+
+    SetAPen(rp, 22); //mörkgrå
+    Move(rp, 0, hight+2); //svart övre
+    Draw(rp, app.screenW, hight+2);
+
+
+
+
+
+
+
+  //lilla topplisten 
+    SetAPen(rp, 7); //vit
+    Move(rp, 3, 3); 
+    Draw(rp, app.screenW-4, 3);
+
+    Move(rp, 3, 3); //vit vänster
+    Draw(rp, 3, 15);
+
+    SetAPen(rp, 26); //ruta grå
+    RectFill(rp, 4, 4, app.screenW-4, 15);
+
+    SetAPen(rp, 22); //st?ller in f?rg o rita med
+    Move(rp, 3, 16); //list under mörkgrå
+    Draw(rp, app.screenW-4, 16);
+
     SetAPen(rp, 1); //st?ller in f?rg o rita med
-    Move(rp, 2, 2); //
-    Draw(rp, 2, app.screenH-2); //svart    
-
-
-
+    Move(rp, 3, 17); //list underst svart
+    Draw(rp, app.screenW-4, 17);
 
 
 
@@ -119,7 +142,7 @@ void draw_icon(struct RastPort* rp, int iconIndex, int startX, int startY)
         for (int x = 0; x < ICON_WIDTH; x++) {
             UBYTE color = iconSet[iconIndex][y][x]; //plockar f?rgcoder fr?n arrayet iconset
             if (color != 0) {                           //ritar inga pixlr p? 0:or
-                SetAPen(rp, color); //st?ller in f?rg o rita med
+                SetAPen(rp, color); //st?ller in färg o rita med
                 WritePixel(rp, startX + x, startY + y); //ritar en pixel
             }
         }
@@ -165,7 +188,7 @@ void draw_time(struct RastPort* rp) {
     static char dateStr[40]; static char timeStr[40]; //deklarera font 
     DateStamp(&ds); 
     SetAPen(rp, 1); //st?ller in f?rg o rita med
-    SetBPen(rp, 26); //st?ller in f?rg o rita med
+    //SetBPen(rp, JAM1); //st?ller in f?rg o rita med
   
     dt.dat_Stamp = ds; 
     dt.dat_Format = FORMAT_INT; // Internationellt format: HH:MM:SS 
@@ -178,8 +201,10 @@ void draw_time(struct RastPort* rp) {
     if (font) {
         SetFont(rp, font); // använd fonten 19 
         Move(rp, 10, 12); 
-        Text(rp, "A-F\xE5n 1.0", 9); 
-        Move(rp, 230, 12); 
+        Text(rp, "A-F\xE5n 0.6", 9); 
+        Move(rp, 400, 12); 
         Text(rp, timeStr, strlen(timeStr)); 
+
+        
     } 
 }

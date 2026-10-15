@@ -5,11 +5,9 @@
 
 #define ICON_WIDTH 30
 #define ICON_HEIGHT 30
-#define ICON_COUNT 6
-#define SYS_ICON_COUNT 5
+#define ICON_COUNT 10
 
 extern const UBYTE iconSet[ICON_COUNT][ICON_HEIGHT][ICON_WIDTH];
-extern const UBYTE sysIconSet[SYS_ICON_COUNT][ICON_HEIGHT][ICON_WIDTH];
 
 #endif
 

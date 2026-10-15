@@ -97,15 +97,39 @@ while ((msg = (struct IntuiMessage*)GetMsg(window->UserPort))){
                     break;
                 case 0x44: // Enter allt kul som händer vid enter
                 {
-                    if (app.mnuX == 1 && app.mnuY == 2) { // Klocka 1x2
-                        startaAppTest("SYS:Utilities/Clock");
+                    //Rad1
+                      if (app.mnuX == 1 && app.mnuY == 1) { 
+                    startaAppTest("WHDLoad slave=dh0:games/moonstone/moonstone.slave data=dh0:games/moonstone/data");
                     }
-                                       
+                    if (app.mnuX == 2 && app.mnuY == 1) { 
+                        startaAppTest("WHDLoad slave=dh0:games/wings/wings.slave data=dh0:games/wings/data");
+                    }
+                    if (app.mnuX == 3 && app.mnuY == 1) { 
+                        startaAppTest("DH0:AP/KAL/KAL");                    
+                    }
+
+                    //Rad2
+                    if (app.mnuX == 1 && app.mnuY == 2) { // Klocka
+                        startaAppTest("PREFS:TIME");
+                    }
+                    if (app.mnuX == 2 && app.mnuY == 2) { // CLI
+                        startaAppTest("CLI");
+                    }
+                    if (app.mnuX == 3 && app.mnuY == 2) { // INTÖRNET
+                        startaAppTest("DH0:INTERNET/AWEB/AWEB");
+                    } 
+                    
+
+
+
                     if (app.mnuX == 1 && app.mnuY == 3) { // Klocka 1x2
-                        //startaAppTest("DH1:AFONSEND/AFONSEND >CON:0/0/640/200/AfonCLI");
-                        //startaAppTest("DH1:AFONSEND/AFONSEND >CON:0/0/640/200/AfonCLI/CLOSE");
-                        //startaAppTest("EXECUTE DH1:AFONSEND/TEST >CON:0/0/640/200/AfonCLI");
-                        startaAppTest("DH1:AFON/AFONSEND");
+                        startaAppTest("DH0:AP/AFONSEND/AFONSEND");
+                    }
+                    if (app.mnuX == 2 && app.mnuY == 3) { // Klocka 1x2
+                        startaAppTest("DH0:AP/BOK/BOK");
+                    }
+                    if (app.mnuX == 3 && app.mnuY == 3) { // Klocka 1x2
+                        startaAppTest("DH0:AP/SMS/SMS");
                     }
 
 
@@ -114,10 +138,7 @@ while ((msg = (struct IntuiMessage*)GetMsg(window->UserPort))){
 
 
                     
-                    if (app.mnuX == 1 && app.mnuY == 1) { // app 1x1
-                     System("Run >NIL: WHDLoad slave=dh0:games/moonstone/moonstone.slave data=dh0:games/moonstone/data", NULL);
-                    }
-
+                  
                     break;
                 }
                 }
