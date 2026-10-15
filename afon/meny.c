@@ -53,7 +53,7 @@ int main()
     loggFel("STARTAR.....", 0);
     app.mnuX = 1;
     app.mnuY = 1;
-    app.screenW = 640; //320;
+    app.screenW = 640; 
     app.screenH = 480;
     BOOL updateScreen = 0;
     running = TRUE;
